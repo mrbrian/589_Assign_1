@@ -1,0 +1,6 @@
+Debug
+*.vc*
+*.sln
+*.sdf
+*.suo
+*.opensdf
