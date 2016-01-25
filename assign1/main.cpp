@@ -1,4 +1,6 @@
+#ifdef WIN32
 #include <windows.h>
+#endif
 
 #define GLFW_DLL
 #include<GLFW/glfw3.h>
