@@ -1,3 +1,5 @@
+#include<GLFW/glfw3.h>
+
 class Point3D
 {
 public:

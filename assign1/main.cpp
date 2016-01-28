@@ -13,7 +13,12 @@
 #include <vector>
 #include <stdio.h>
 
-#define STEP	M_PI / 180
+#define RAD_STEP	M_PI / 180
+#define STEP        0.5
+
+double R = 1;           // outer circle radius
+double r = 0.333333;    // inner circle radius
+
 
 void drawPoints(std::vector<Point3D*> points)
 {
@@ -46,7 +51,6 @@ void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_r, std::vector<Po
     //glFrustum
 
     //We draw a square on the screen, which gets transformed by the model view matrix
-//	glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
     glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
     //glNormal3f
     glColor3f (1.0f, 0.0f, 0.0f);
@@ -81,7 +85,7 @@ Point3D *getHCPoint(float r, float R, double theta)
 
 void circlePoints(std::vector<Point3D*> *points, float radius, Point3D pos)
 {
-    for (double theta = 0; theta < 2 * M_PI; theta += STEP)
+    for (double theta = 0; theta < 2 * M_PI; theta += RAD_STEP)
     {
         double x = radius * cos(theta) + pos.x;
         double y = radius * sin(theta) + pos.y;
@@ -96,10 +100,10 @@ void makeCycloid(std::vector<Point3D*> *points, int n, float r, float R, float r
 
     for (int cycle = 0; cycle < n; cycle++)
     {
-        for (float t = 0; t < 2 * M_PI; t += STEP)
+        for (float t = 0; t < 2 * M_PI; t += RAD_STEP)
         {
             points->push_back(getHCPoint(r, R, theta));
-            theta += STEP;
+            theta += RAD_STEP;
         }
     }
 }
@@ -128,17 +132,26 @@ void testo(std::vector<Point3D*> *points)
     points->push_back(new Point3D(0, 0, 0));
 }
 
-void runTest()
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    std::vector<Point3D*> p;
-    testo(&p);
-    float t1 = sin(M_PI_2);
-    float t2 = sin(M_PI_4);
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+        r -= STEP;
+
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+        r += STEP;
+
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS)
+        R -= STEP;
+
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+        R += STEP;
+
 }
 
 int main () {
-
-    runTest();
 
     if (!glfwInit()) {
         std::cout << "Could not initialize.\n";
@@ -152,20 +165,16 @@ int main () {
         return 1;
     }
 
-
     glfwMakeContextCurrent (window);
+
+    glfwSetKeyCallback(window, key_callback);
 
     std::vector<Point3D*> points_h;		// hypocycloid
     std::vector<Point3D*> points_R;		// bigger circle
     std::vector<Point3D*> points_r;		// smaller circle
     std::vector<Point3D*> points_l;		// line
 
-    double R = 1;
-    double r = 0.5;
-
-    circlePoints(&points_R, R, Point3D(0, 0, 0));
-
-        double prevTime = 0;
+    double prevTime = 0;
 
     while (!glfwWindowShouldClose (window))
     {
@@ -174,10 +183,13 @@ int main () {
         // refresh the innercircle.
 
         double currTime = glfwGetTime();
-            float elapsedTime = (float)(currTime - prevTime) / 1000.f;
-            prevTime = currTime;
+        float elapsedTime = (float)(currTime - prevTime) / 1000.f;
+        prevTime = currTime;
 
         double theta = currTime;
+
+        points_R.clear();
+        circlePoints(&points_R, R, Point3D(0, 0, 0));
 
         points_r.clear();
         Point3D *innerPos = innerPath(r, R, theta);
@@ -189,8 +201,8 @@ int main () {
 
         //printf("%f\n", innerPos->x);
 
-        points_h.clear();
-        makeCycloid(&points_h, 1, r, R, 0, 1);
+        points_h.push_back(getHCPoint(r, R, theta));
+        //makeCycloid(&points_h, 1, r, R, 0, 1);
 
         render (points_h, points_r, points_l, points_R);
         glfwSwapBuffers (window);
