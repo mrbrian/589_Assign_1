@@ -1,5 +1,5 @@
 #ifdef WIN32
-#include <windows.h>
+	#include <windows.h>
 #endif
 
 #define GLFW_DLL
@@ -11,6 +11,9 @@
 #include <math.h>
 #include "misc.h"
 #include <vector>
+#include <stdio.h>
+
+#define STEP	M_PI / 180
 
 void drawPoints(std::vector<Point3D*> points)
 {
@@ -22,7 +25,7 @@ void drawPoints(std::vector<Point3D*> points)
 	}
 }
 
-void render(std::vector<Point3D*> points)
+void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_r, std::vector<Point3D*> p_R)
 {
 	glEnable (GL_DEPTH_TEST);
 	//glEnable (GL_LIGHTING);
@@ -42,11 +45,11 @@ void render(std::vector<Point3D*> points)
 	//gluPerspective (fov, aspect ratio, near plane, far plane)
 	//glFrustum
 
-
 	//We draw a square on the screen, which gets transformed by the model view matrix
-	glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
+//	glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
+	glBegin (GL_POINTS); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
 	//glNormal3f
-	glColor3f (1.0f, 0.0f, 0.0f);
+/*	glColor3f (1.0f, 0.0f, 0.0f);
 	glVertex3f (-0.5f, 0.5f, 0.0f);
 	glColor3f (0.0f, 1.0f, 0.0f);
 	glVertex3f (0.5f, 0.5f, 0.0f);
@@ -54,8 +57,10 @@ void render(std::vector<Point3D*> points)
 	glVertex3f (0.5f, -0.5f, 0.0f);
 	glColor3f (1.0f, 1.0f, 1.0f);
 	glVertex3f (-0.5f, -0.5f, 0.0f);
-	
-	drawPoints(points);
+*/	
+	drawPoints(p_h);
+	drawPoints(p_r);
+	drawPoints(p_R);
 	
 	glEnd ();
 }
@@ -70,20 +75,27 @@ Point3D *GetPoint(float r, float R, double theta)
 	return result;
 }
 
+void CirclePoints(std::vector<Point3D*> *points, float radius, Point3D pos)
+{
+	for (double theta = 0; theta < 2 * M_PI; theta += STEP)
+	{
+		double x = radius * cos(theta);
+		double y = radius * sin(theta); 
+	
+		points->push_back(new Point3D(x, y, 0));
+	}
+}
 
 void makeCycloid(std::vector<Point3D*> *points, int n, float r, float R, float rot, float s)
 {
-	float step = M_1_PI / 10;	// pi / 100
 	float theta = 0;
-
-	points->clear();
 
 	for (int cycle = 0; cycle < n; cycle++)
 	{
-		for (float t = 0; t < 2 * M_PI; t += step)
+		for (float t = 0; t < 2 * M_PI; t += STEP)
 		{
 			points->push_back(GetPoint(r, R, theta));
-			theta += step;
+			theta += STEP;
 		}
 	}
 }
@@ -112,6 +124,7 @@ void runTest()
 }
 
 int main () {
+
 	runTest();
 
 	if (!glfwInit()) {
@@ -129,12 +142,36 @@ int main () {
 
 	glfwMakeContextCurrent (window);
 
-	std::vector<Point3D*> points;
+	std::vector<Point3D*> points_h;		// hypocycloid 
+	std::vector<Point3D*> points_R;		// bigger circle
+	std::vector<Point3D*> points_r;		// smaller circle
 
+	double R = 1;
+	double r = 0.33333;
+
+	CirclePoints(&points_R, R, Point3D(0, 0, 0));
+	
+        double prevTime = 0;
+        
 	while (!glfwWindowShouldClose (window)) 
 	{
-		makeCycloid(&points, 5, 0.123, 1, 0, 1);
-		render (points);
+		// to animate. keep adding the hypocycloid points.
+		// generate the outer circle points once.
+		// refresh the innercircle.
+			
+		double currTime = glfwGetTime();
+        	float elapsedTime = (float)(currTime - prevTime) / 1000.f;
+	        prevTime = currTime;
+		
+		points_r.clear();
+		CirclePoints(&points_r, r, Point3D(0, 0, 0));
+
+		printf("%f\n", prevTime); 
+
+		points_h.clear();
+		makeCycloid(&points_h, 1, r, R, 0, 1);
+
+		render (points_h, points_r, points_R);
 		glfwSwapBuffers (window);
 		glfwPollEvents();
 	}
