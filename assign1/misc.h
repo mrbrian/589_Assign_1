@@ -1,16 +1,3 @@
-class Point2D
-{
-public:
-	float x;
-	float y;
-
-	Point2D(float x, float y)
-	{
-		this->x = x;
-		this->y = y;
-	}
-};
-
 class Point3D
 {
 public:
@@ -18,16 +5,17 @@ public:
 	float y;
 	float z;
 
-	Point3D(float x, float y, float z)
-	{
-		this->x = x;
-		this->y = y;
-		this->z = z;
-	}
-};
+    Point3D(float x, float y, float z)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    }
 
-class Line
-{
-public: 
-	Point2D a, b;
+    Point3D(const Point3D &p)
+    {
+        this->x = p.x;
+        this->y = p.y;
+        this->z = p.z;
+    }
 };
