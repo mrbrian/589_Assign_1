@@ -13,23 +13,22 @@
 #include <vector>
 #include <stdio.h>
 
-#define RAD_STEP	M_PI / 180
-#define STEP        0.01
+#define RAD_STEP	M_PI / 180	// step size for rendering circles/hypocycloid
+#define STEP        0.01		// step size for modifying values via keyboard
 
-bool refresh;
-bool animate;
+bool refresh = true;	// force
+bool animate;			// true = playing an animation, false = display the hypocycloid
 
-float R = 1;           // outer circle radius
-float r = 0.333333;    // inner circle radius
-float speed = 2;
-float scale = 1;
+float R = 1;        // outer circle radius
+float r = 0.25;		// inner circle radius
+float scale = 1;	// scene scale
 
-int cycles = 1;
-int rotation = 0;
+int cycles = 1;		// number of cycles for hypocycloid
+int rotation = 0;	// scene rotation in degrees
 
-float timer;
-float FRAMETIME = 1.0f / 60;
+float FRAMETIME = 1.0f / 60;	// time per frame at 60 FPS
 
+/*  Iterates through a point list and passes each point through glVertex3f  */
 void drawPoints(std::vector<Point3D*> points)
 {
     for (std::vector<Point3D*>::iterator it = points.begin(); it != points.end(); ++it)
@@ -40,7 +39,8 @@ void drawPoints(std::vector<Point3D*> points)
     }
 }
 
-void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_r, std::vector<Point3D*> p_l, std::vector<Point3D*> p_R)
+/*  Passes off each of the point lists for rendering as lines */
+void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_R, std::vector<Point3D*> p_r, std::vector<Point3D*> p_l)
 {
     glEnable (GL_DEPTH_TEST);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -50,7 +50,7 @@ void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_r, std::vector<Po
     glLoadIdentity();
     glTranslatef(0, 0, 0.0f);
     glRotatef(rotation, 0.0f, 0.0f, 1.0f);
-    glScalef(1, 1, 1.0f);
+    glScalef(scale, scale, scale);
 
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity();
@@ -77,6 +77,7 @@ void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_r, std::vector<Po
     glEnd ();
 }
 
+/*   Gets a single point of the hypocycloid defined by the inner circle radius r, outer circle radius R, and angle theta   */
 Point3D *getHCPoint(float r, float R, double theta)
 {
     double x = (R - r)*cos(theta) + r*cos(((R - r) / r)*theta);
@@ -87,6 +88,8 @@ Point3D *getHCPoint(float r, float R, double theta)
     return result;
 }
 
+
+/*  Generates points of a circle at the given position with given radius  */
 void circlePoints(std::vector<Point3D*> *points, float radius, Point3D pos)
 {
     for (double theta = 0; theta < 2 * M_PI; theta += RAD_STEP)
@@ -98,20 +101,20 @@ void circlePoints(std::vector<Point3D*> *points, float radius, Point3D pos)
     }
 }
 
+/*  Iterates a full 360 degrees (2pi), and populates the given list with the hypocycloid points  */
 void makeCycloid(std::vector<Point3D*> *points, int n, float r, float R, float rot, float s)
 {
-    float theta = 0;
-
     for (int cycle = 0; cycle < n; cycle++)
     {
-        for (float t = 0; t < 2 * M_PI; t += RAD_STEP)
+		for (float theta = 0; theta < 2 * M_PI; theta += RAD_STEP)
         {
-            points->push_back(getHCPoint(r, R, theta));
-            theta += RAD_STEP;
+			float offset = 2 * M_PI * cycle;
+            points->push_back(getHCPoint(r, R, offset + theta));
         }
     }
 }
 
+/*  Returns the position of the inner circle (radius r) with the given outer radius R and theta  */
 Point3D *innerPath(float r, float R, double theta)
 {
     double x = (R - r)*cos(theta);
@@ -129,6 +132,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		switch (key)
 		{
 		case GLFW_KEY_ESCAPE:
+			printf("Exiting..\n", r);
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			return;
 		case GLFW_KEY_LEFT:
@@ -151,7 +155,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			printf("Outer Radius: %.2f\n", R);
 			break;
 		case GLFW_KEY_MINUS:
-			cycles--;
+			if (cycles > 1)
+				cycles--;
 			printf("Cycles: %d\n", cycles);
 			return;
 		case GLFW_KEY_EQUAL:
@@ -159,27 +164,37 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			printf("Cycles: %d\n", cycles);
 			return;
 		case GLFW_KEY_A:
-			rotation -= STEP;
+			rotation--;
 			printf("Rotation: %.2f\n", rotation);
 			return;
-		case GLFW_KEY_S:
-			rotation += STEP;
+		case GLFW_KEY_D:
+			rotation++;
 			printf("Rotation: %.2f\n", rotation);
+			return;
+		case GLFW_KEY_W:
+			scale += STEP;
+			printf("Scale: %.2f\n", rotation);
+			return;
+		case GLFW_KEY_S:
+			if (scale > 0)
+				scale -= STEP;
+			printf("Scale: %.2f\n", rotation);
 			return;
 		case GLFW_KEY_SPACE:
 			animate = true;
-			printf("Rotation: %.2f\n", rotation);
+			printf("Starting animation.\n", rotation);
 			break;
 		default:
 			return;
 		}
-		refresh = true;
+		refresh = true;		// clear & update the scene point lists
 	}
 }
 
+/*  Frees allocated memory and clear a vector list */
 void clearVector(std::vector<Point3D*> *list)
 {
-	while (!list->empty())
+	while (!list->empty())		
 	{
 		std::vector<Point3D*>::iterator it = list->end();
 		it--;
@@ -188,17 +203,22 @@ void clearVector(std::vector<Point3D*> *list)
 	}
 }
 
-void drawHypocycloid(std::vector<Point3D*> *points_h, 
+/*  Populates the point lists  */
+void hypocycloidPoints(std::vector<Point3D*> *points_h,
 					std::vector<Point3D*> *points_R, 
 					std::vector<Point3D*> *points_r, 
 					std::vector<Point3D*> *points_l)
 {
+	// Clear old data
 	clearVector(points_h);
 	clearVector(points_R);
 	clearVector(points_r);
 	clearVector(points_l);
 
+	// Generate outer circle
 	circlePoints(points_R, R, Point3D(0, 0, 0));
+
+	// Generate/store hypocycloid points
 	for (float theta = 0; theta < M_PI * 2 * cycles; theta += RAD_STEP)
 	{
 		points_h->push_back(getHCPoint(r, R, theta));
@@ -211,36 +231,36 @@ void updateAnim(float *p_theta,
 				std::vector<Point3D*> *points_r, 
 				std::vector<Point3D*> *points_l)
 {
-	float &theta = *p_theta;
+	const float SPEED = 2;
+	float &theta = *p_theta;	// update the value of ref parameter p_theta via theta
 
-	timer = FRAMETIME;
-	if (refresh)
+	if (refresh)		// some parameter changed, so start the animation over
 	{
 		theta = 0;
 		clearVector(points_h);
 		refresh = false;
 	}
 
-	theta += FRAMETIME * speed;
-
 	if (theta < M_PI * 2 * cycles)
 	{
-		clearVector(points_R);
+		clearVector(points_R);		// clearing old points
 		clearVector(points_r);
 		clearVector(points_l);
 
-		circlePoints(points_R, R, Point3D(0, 0, 0));
+		circlePoints(points_R, R, Point3D(0, 0, 0));	// generate outer circle
 
-		Point3D *innerPos = innerPath(r, R, theta);
-		circlePoints(points_r, r, *innerPos);
+		Point3D *innerPos = innerPath(r, R, theta);		// get the center position of the inner circle
+		circlePoints(points_r, r, *innerPos);			// generate inner circle
 
-		points_l->push_back(innerPos);                   // center point
-		points_l->push_back(getHCPoint(r, R, theta));
+		points_l->push_back(innerPos);                  // center point of inner circle
+		points_l->push_back(getHCPoint(r, R, theta));	// fixed point of inner circle
 		points_h->push_back(getHCPoint(r, R, theta));
+
+		theta += FRAMETIME * SPEED;		// increment theta
 	}
 	else
 	{
-		animate = false;			// end animation
+		animate = false;	// animation is over
 	}
 }
 
@@ -258,45 +278,41 @@ int main () {
         return 1;
     }
 
-    glfwMakeContextCurrent (window);
+    glfwMakeContextCurrent (window);	
+    glfwSetKeyCallback(window, key_callback);	// setup input callback 
 
-    glfwSetKeyCallback(window, key_callback);
+	// Separate point lists for each screen element
 
     std::vector<Point3D*> points_h;		// hypocycloid
     std::vector<Point3D*> points_R;		// large circle
     std::vector<Point3D*> points_r;		// small circle
     std::vector<Point3D*> points_l;		// line of small circle
-
-	float theta = 0;
-	double currTime = 0;
+	
+	float theta = 0;		// theta of the current animation
+	double currTime = 0;	// time
 	double prevTime = 0;
+	float timer = 0;
 
     while (!glfwWindowShouldClose (window))
     {
-        // to animate. keep adding the hypocycloid points.
-        // generate the outer circle points once.
-        // refresh the innercircle.
-
+		// Time code for making updates at 60 FPS
 		currTime = glfwGetTime();
 		double elapsedTime = currTime - prevTime;
 		timer -= elapsedTime;
 		prevTime = currTime;
 
-		if (timer <= 0)
+		if (timer <= 0)		// if it's time to render a new frame..
 		{
+			timer = FRAMETIME;
 			if (!animate)
 			{
-				if (refresh)
-				{
-					drawHypocycloid(&points_h, &points_R, &points_r, &points_l);
-				}
-				refresh = false;
+				hypocycloidPoints(&points_h, &points_R, &points_r, &points_l);		// draw the whole hypocycloid, populates the point list 
 			}
 			else
 			{
-				updateAnim(&theta, &points_h, &points_R, &points_r, &points_l);
+				updateAnim(&theta, &points_h, &points_R, &points_r, &points_l);		// draw the animation, appending to the previous point list
 			}
-			render(points_h, points_R, points_r, points_l);
+			render(points_h, points_R, points_r, points_l);		// render the scene
 			glfwSwapBuffers(window);
 		}
 

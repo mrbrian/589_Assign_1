@@ -18,3 +18,11 @@ S			- rotate right
 
 +			- increase cycles
 -			- decrease cycles
+
+
+Files submitted:
+
+readme
+main.cpp
+misc.h
+makefile
