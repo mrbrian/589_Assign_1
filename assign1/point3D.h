@@ -1,9 +1,9 @@
 #include<GLFW/glfw3.h>
 
-class Point3D
+class Point3D	// your basic Point3D class
 {
 public:
-	float x;
+	float x;	// point coordinates
 	float y;
 	float z;
 
@@ -14,7 +14,7 @@ public:
         this->z = z;
     }
 
-    Point3D(const Point3D &p)
+    Point3D(const Point3D &p)	// copy constructor
     {
         this->x = p.x;
         this->y = p.y;
