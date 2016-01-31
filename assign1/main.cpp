@@ -14,11 +14,21 @@
 #include <stdio.h>
 
 #define RAD_STEP	M_PI / 180
-#define STEP        0.5
+#define STEP        0.01
 
-double R = 1;           // outer circle radius
-double r = 0.333333;    // inner circle radius
+bool refresh;
+bool animate;
 
+float R = 1;           // outer circle radius
+float r = 0.333333;    // inner circle radius
+float speed = 2;
+float scale = 1;
+
+int cycles = 1;
+int rotation = 0;
+
+float timer;
+float FRAMETIME = 1.0f / 60;
 
 void drawPoints(std::vector<Point3D*> points)
 {
@@ -33,41 +43,35 @@ void drawPoints(std::vector<Point3D*> points)
 void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_r, std::vector<Point3D*> p_l, std::vector<Point3D*> p_R)
 {
     glEnable (GL_DEPTH_TEST);
-    //glEnable (GL_LIGHTING);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
     //Functions for changing transformation and projection matrices
     glMatrixMode (GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(0, 0, 0.0f);
-    glRotatef(0.0f, 0.0f, 0.0f, 1.0f);
+    glRotatef(rotation, 0.0f, 0.0f, 1.0f);
     glScalef(1, 1, 1.0f);
 
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity();
     glOrtho (-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-    //gluPerspective (fov, aspect ratio, near plane, far plane)
-    //glFrustum
 
-    //We draw a square on the screen, which gets transformed by the model view matrix
-    glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
-    //glNormal3f
+    glBegin (GL_LINE_STRIP); 
     glColor3f (1.0f, 0.0f, 0.0f);
     drawPoints(p_h);
     glEnd ();
 
-    glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
+    glBegin (GL_LINE_STRIP);
     glColor3f (1.0f, 1.0f, 1.0f);
     drawPoints(p_r);
     glEnd ();
 
-    glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
+    glBegin (GL_LINE_STRIP); 
     glColor3f (1.0f, 1.0f, 1.0f);
     drawPoints(p_l);
     glEnd ();
 
-    glBegin (GL_LINE_STRIP); //GL_POINTS, GL_LINES, GL_TRIANGLES, GL_QUADS
+    glBegin (GL_LINE_STRIP);
     glColor3f (0.0f, 0.0f, 1.0f);
     drawPoints(p_R);
     glEnd ();
@@ -118,37 +122,126 @@ Point3D *innerPath(float r, float R, double theta)
     return result;
 }
 
-double getInnerTheta(float r, float R, double theta)
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    double distTravelled = theta * R;
-    float innerCircum = 2 * r * M_PI;
-    float innerNumRotations = distTravelled / innerCircum;
-
-    return innerNumRotations * M_2_PI;
+	if (action == GLFW_PRESS | action == GLFW_REPEAT)
+	{
+		switch (key)
+		{
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
+			return;
+		case GLFW_KEY_LEFT:
+			if (r > STEP)
+				r -= STEP;
+			printf("Inner Radius: %.2f\n", r);
+			break;
+		case GLFW_KEY_RIGHT:
+			if ((r + STEP) < R)
+				r += STEP;
+			printf("Inner Radius: %.2f\n", r);
+			break;
+		case GLFW_KEY_UP:
+			if (R > STEP)
+				R -= STEP;
+			printf("Outer Radius: %.2f\n", R);
+			break;
+		case GLFW_KEY_DOWN:
+			R += STEP;
+			printf("Outer Radius: %.2f\n", R);
+			break;
+		case GLFW_KEY_MINUS:
+			cycles--;
+			printf("Cycles: %d\n", cycles);
+			return;
+		case GLFW_KEY_EQUAL:
+			cycles++;
+			printf("Cycles: %d\n", cycles);
+			return;
+		case GLFW_KEY_A:
+			rotation -= STEP;
+			printf("Rotation: %.2f\n", rotation);
+			return;
+		case GLFW_KEY_S:
+			rotation += STEP;
+			printf("Rotation: %.2f\n", rotation);
+			return;
+		case GLFW_KEY_SPACE:
+			animate = true;
+			printf("Rotation: %.2f\n", rotation);
+			break;
+		default:
+			return;
+		}
+		refresh = true;
+	}
 }
 
-void testo(std::vector<Point3D*> *points)
+void clearVector(std::vector<Point3D*> *list)
 {
-    points->push_back(new Point3D(0, 0, 0));
+	while (!list->empty())
+	{
+		std::vector<Point3D*>::iterator it = list->end();
+		it--;
+		delete((*it));
+		list->erase(it);
+	}
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void drawHypocycloid(std::vector<Point3D*> *points_h, 
+					std::vector<Point3D*> *points_R, 
+					std::vector<Point3D*> *points_r, 
+					std::vector<Point3D*> *points_l)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+	clearVector(points_h);
+	clearVector(points_R);
+	clearVector(points_r);
+	clearVector(points_l);
 
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
-        r -= STEP;
+	circlePoints(points_R, R, Point3D(0, 0, 0));
+	for (float theta = 0; theta < M_PI * 2 * cycles; theta += RAD_STEP)
+	{
+		points_h->push_back(getHCPoint(r, R, theta));
+	}
+}
 
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
-        r += STEP;
+void updateAnim(float *p_theta, 
+				std::vector<Point3D*> *points_h, 
+				std::vector<Point3D*> *points_R, 
+				std::vector<Point3D*> *points_r, 
+				std::vector<Point3D*> *points_l)
+{
+	float &theta = *p_theta;
 
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS)
-        R -= STEP;
+	timer = FRAMETIME;
+	if (refresh)
+	{
+		theta = 0;
+		clearVector(points_h);
+		refresh = false;
+	}
 
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
-        R += STEP;
+	theta += FRAMETIME * speed;
 
+	if (theta < M_PI * 2 * cycles)
+	{
+		clearVector(points_R);
+		clearVector(points_r);
+		clearVector(points_l);
+
+		circlePoints(points_R, R, Point3D(0, 0, 0));
+
+		Point3D *innerPos = innerPath(r, R, theta);
+		circlePoints(points_r, r, *innerPos);
+
+		points_l->push_back(innerPos);                   // center point
+		points_l->push_back(getHCPoint(r, R, theta));
+		points_h->push_back(getHCPoint(r, R, theta));
+	}
+	else
+	{
+		animate = false;			// end animation
+	}
 }
 
 int main () {
@@ -170,11 +263,13 @@ int main () {
     glfwSetKeyCallback(window, key_callback);
 
     std::vector<Point3D*> points_h;		// hypocycloid
-    std::vector<Point3D*> points_R;		// bigger circle
-    std::vector<Point3D*> points_r;		// smaller circle
-    std::vector<Point3D*> points_l;		// line
+    std::vector<Point3D*> points_R;		// large circle
+    std::vector<Point3D*> points_r;		// small circle
+    std::vector<Point3D*> points_l;		// line of small circle
 
-    double prevTime = 0;
+	float theta = 0;
+	double currTime = 0;
+	double prevTime = 0;
 
     while (!glfwWindowShouldClose (window))
     {
@@ -182,31 +277,30 @@ int main () {
         // generate the outer circle points once.
         // refresh the innercircle.
 
-        double currTime = glfwGetTime();
-        float elapsedTime = (float)(currTime - prevTime) / 1000.f;
-        prevTime = currTime;
+		currTime = glfwGetTime();
+		double elapsedTime = currTime - prevTime;
+		timer -= elapsedTime;
+		prevTime = currTime;
 
-        double theta = currTime;
+		if (timer <= 0)
+		{
+			if (!animate)
+			{
+				if (refresh)
+				{
+					drawHypocycloid(&points_h, &points_R, &points_r, &points_l);
+				}
+				refresh = false;
+			}
+			else
+			{
+				updateAnim(&theta, &points_h, &points_R, &points_r, &points_l);
+			}
+			render(points_h, points_R, points_r, points_l);
+			glfwSwapBuffers(window);
+		}
 
-        points_R.clear();
-        circlePoints(&points_R, R, Point3D(0, 0, 0));
-
-        points_r.clear();
-        Point3D *innerPos = innerPath(r, R, theta);
-        circlePoints(&points_r, r, *innerPos);
-
-        points_l.clear();
-        points_l.push_back(innerPos);                   // center point
-        points_l.push_back(getHCPoint(r, R, theta));
-
-        //printf("%f\n", innerPos->x);
-
-        points_h.push_back(getHCPoint(r, R, theta));
-        //makeCycloid(&points_h, 1, r, R, 0, 1);
-
-        render (points_h, points_r, points_l, points_R);
-        glfwSwapBuffers (window);
-        glfwPollEvents();
+		glfwPollEvents();
     }
 
     glfwDestroyWindow(window);
