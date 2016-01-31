@@ -131,61 +131,61 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		switch (key)
 		{
-		case GLFW_KEY_ESCAPE:
+		case GLFW_KEY_ESCAPE:		// exit the application 
 			printf("Exiting..\n", r);
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			return;
-		case GLFW_KEY_LEFT:
-			if (r > STEP)
-				r -= STEP;
-			printf("Inner Radius: %.2f\n", r);
-			break;
-		case GLFW_KEY_RIGHT:
-			if ((r + STEP) < R)
-				r += STEP;
-			printf("Inner Radius: %.2f\n", r);
-			break;
-		case GLFW_KEY_UP:
-			if (R > STEP)
-				R -= STEP;
-			printf("Outer Radius: %.2f\n", R);
-			break;
-		case GLFW_KEY_DOWN:
-			R += STEP;
-			printf("Outer Radius: %.2f\n", R);
-			break;
-		case GLFW_KEY_MINUS:
+		case GLFW_KEY_MINUS:		// increase the number of cycles  (doesnt cause a refresh, the return statement skips it)
 			if (cycles > 1)
 				cycles--;
 			printf("Cycles: %d\n", cycles);
 			return;
-		case GLFW_KEY_EQUAL:
+		case GLFW_KEY_EQUAL:		// decrease the number of cycles
 			cycles++;
 			printf("Cycles: %d\n", cycles);
 			return;
-		case GLFW_KEY_A:
+		case GLFW_KEY_A:			// rotate clockwise
 			rotation--;
 			printf("Rotation: %.2f\n", rotation);
 			return;
-		case GLFW_KEY_D:
+		case GLFW_KEY_D:			// rotate counterclockwise
 			rotation++;
 			printf("Rotation: %.2f\n", rotation);
 			return;
-		case GLFW_KEY_W:
+		case GLFW_KEY_W:			// increase scale
 			scale += STEP;
 			printf("Scale: %.2f\n", rotation);
 			return;
-		case GLFW_KEY_S:
+		case GLFW_KEY_S:			// decrease scale 
 			if (scale > 0)
 				scale -= STEP;
 			printf("Scale: %.2f\n", rotation);
 			return;
-		case GLFW_KEY_SPACE:
+		case GLFW_KEY_LEFT:			// decrease inner circle radius  (causes refresh via break statement)
+			if (r > STEP)
+				r -= STEP;
+			printf("Inner Radius: %.2f\n", r);
+			break;
+		case GLFW_KEY_RIGHT:		// increase inner circle radius  (causes refresh)
+			if ((r + STEP) < R)
+				r += STEP;
+			printf("Inner Radius: %.2f\n", r);
+			break;
+		case GLFW_KEY_DOWN:			// decrease outer circle radius  (causes refresh)
+			if (R > STEP)
+				R -= STEP;
+			printf("Outer Radius: %.2f\n", R);
+			break;
+		case GLFW_KEY_UP:			// increase outer circle radius  (causes refresh)
+			R += STEP;
+			printf("Outer Radius: %.2f\n", R);
+			break;
+		case GLFW_KEY_SPACE:		// start animation  (causes refresh)
 			animate = true;
 			printf("Starting animation.\n", rotation);
 			break;
 		default:
-			return;
+			return;					// default, no refresh
 		}
 		refresh = true;		// clear & update the scene point lists
 	}
