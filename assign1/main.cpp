@@ -9,7 +9,7 @@
 #include<iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include "misc.h"
+#include "point3D.h"
 #include <vector>
 #include <stdio.h>
 
