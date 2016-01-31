@@ -3,26 +3,28 @@ Brian Yee
 00993104
 T01
 
-
 Keyboard controls:
 
-SPACE 		- plays animate
+	SPACE 		- toggle animation
+	LEFT ARROW 	- shrink radius of inner circle  (>0 minimum)
+	RIGHT ARROW - grow radius of inner circle	(outer circle radius is max)
+	UP ARROW 	- grow radius of outer circle
+	DOWN ARROW 	- shrink radius of outer circle  (inner circle radius is min)
+	A			- rotate counter-clockwise
+	D			- rotate clockwise
+	W			- increase scale 
+	S			- decrease scale  (0 minimum)
+	+			- increase cycles
+	-			- decrease cycles  (1 minimum)
+	ESCAPE		- exit program
+	
+User can press and hold keys to modify the hypocycloid values.  
 
-LEFT ARROW 	- shrink radius of inner circle
-RIGHT ARROW - grow radius of inner circle
-UP ARROW 	- grow radius of outer circle
-DOWN ARROW 	- grow radius of outer circle
-
-A			- rotate left
-S			- rotate right
-
-+			- increase cycles
--			- decrease cycles
-
+Bonus:  Start/stop the animation by pressing SPACE.
 
 Files submitted:
 
-readme
-main.cpp
-misc.h
-makefile
+	README
+	main.cpp
+	point3D.h
+	makefile

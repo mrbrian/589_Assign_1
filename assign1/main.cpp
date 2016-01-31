@@ -49,31 +49,31 @@ void render(std::vector<Point3D*> p_h, std::vector<Point3D*> p_R, std::vector<Po
     glMatrixMode (GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(0, 0, 0.0f);
-    glRotatef(rotation, 0.0f, 0.0f, 1.0f);
-    glScalef(scale, scale, scale);
+    glRotatef(rotation, 0.0f, 0.0f, 1.0f);		// rotate scene
+    glScalef(scale, scale, scale);				// scale scene
 
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity();
     glOrtho (-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
     glBegin (GL_LINE_STRIP); 
-    glColor3f (1.0f, 0.0f, 0.0f);
-    drawPoints(p_h);
+    glColor3f (1.0f, 0.0f, 0.0f);	
+    drawPoints(p_h);				// render hypocycloid
     glEnd ();
 
     glBegin (GL_LINE_STRIP);
     glColor3f (1.0f, 1.0f, 1.0f);
-    drawPoints(p_r);
+    drawPoints(p_r);				// render inner circle
     glEnd ();
 
     glBegin (GL_LINE_STRIP); 
     glColor3f (1.0f, 1.0f, 1.0f);
-    drawPoints(p_l);
+    drawPoints(p_l);				// render inner circle fixed point
     glEnd ();
 
     glBegin (GL_LINE_STRIP);
     glColor3f (0.0f, 0.0f, 1.0f);
-    drawPoints(p_R);
+    drawPoints(p_R);				// render outerCircle
     glEnd ();
 }
 
@@ -125,6 +125,7 @@ Point3D *innerPath(float r, float R, double theta)
     return result;
 }
 
+/*  Callback function for keyboard input */
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS | action == GLFW_REPEAT)
@@ -137,52 +138,65 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			return;
 		case GLFW_KEY_MINUS:		// increase the number of cycles  (doesnt cause a refresh, the return statement skips it)
 			if (cycles > 1)
+			{
 				cycles--;
-			printf("Cycles: %d\n", cycles);
+				printf("Cycles = %d\n", cycles);
+			}
 			return;
 		case GLFW_KEY_EQUAL:		// decrease the number of cycles
 			cycles++;
-			printf("Cycles: %d\n", cycles);
+			printf("Cycles = %d\n", cycles);
 			return;
 		case GLFW_KEY_A:			// rotate clockwise
-			rotation--;
-			printf("Rotation: %.2f\n", rotation);
-			return;
-		case GLFW_KEY_D:			// rotate counterclockwise
 			rotation++;
-			printf("Rotation: %.2f\n", rotation);
+			printf("Rotation = %d\n", rotation);
+			return;
+		case GLFW_KEY_D:			// rotate counter-clockwise
+			rotation--;
+			printf("Rotation = %d\n", rotation);
 			return;
 		case GLFW_KEY_W:			// increase scale
 			scale += STEP;
-			printf("Scale: %.2f\n", rotation);
+			printf("Scale = %.2f\n", scale);
 			return;
 		case GLFW_KEY_S:			// decrease scale 
 			if (scale > 0)
+			{
 				scale -= STEP;
-			printf("Scale: %.2f\n", rotation);
+				printf("Scale = %.2f\n", scale);
+			}
 			return;
 		case GLFW_KEY_LEFT:			// decrease inner circle radius  (causes refresh via break statement)
 			if (r > STEP)
+			{
 				r -= STEP;
-			printf("Inner Radius: %.2f\n", r);
+				printf("Inner Radius r = %.2f\n", r);
+			}
 			break;
 		case GLFW_KEY_RIGHT:		// increase inner circle radius  (causes refresh)
 			if ((r + STEP) < R)
+			{
 				r += STEP;
-			printf("Inner Radius: %.2f\n", r);
+				printf("Inner Radius r = %.2f\n", r);
+			}
 			break;
 		case GLFW_KEY_DOWN:			// decrease outer circle radius  (causes refresh)
-			if (R > STEP)
+			if ((R - STEP) > r)
+			{
 				R -= STEP;
-			printf("Outer Radius: %.2f\n", R);
+				printf("Outer Radius R = %.2f\n", R);
+			}
 			break;
 		case GLFW_KEY_UP:			// increase outer circle radius  (causes refresh)
 			R += STEP;
-			printf("Outer Radius: %.2f\n", R);
+			printf("Outer Radius R = %.2f\n", R);
 			break;
-		case GLFW_KEY_SPACE:		// start animation  (causes refresh)
-			animate = true;
-			printf("Starting animation.\n", rotation);
+		case GLFW_KEY_SPACE:		// toggle animation  (causes refresh)
+			animate = !animate;
+			if (animate)
+				printf("Starting animation.\n");
+			else
+				printf("Stopping animation.\n");
 			break;
 		default:
 			return;					// default, no refresh
@@ -231,7 +245,7 @@ void updateAnim(float *p_theta,
 				std::vector<Point3D*> *points_r, 
 				std::vector<Point3D*> *points_l)
 {
-	const float SPEED = 2;
+	const float SPEED = 2;		// animation speed scale
 	float &theta = *p_theta;	// update the value of ref parameter p_theta via theta
 
 	if (refresh)		// some parameter changed, so start the animation over
@@ -281,11 +295,14 @@ int main () {
     glfwMakeContextCurrent (window);	
     glfwSetKeyCallback(window, key_callback);	// setup input callback 
 
+	printf("Hypocycloid Program\nModify values with [W,A,S,D,-,=,Up,Down,Left,Right] keys.  ESC to exit.\n");
+	printf("Cycles = %d\nInner Radius r = %.2f\nOuter Radius R = %.2f\nRotation = %d\nScale = %.2f\n", cycles, r, R, rotation, scale);
+
 	// Separate point lists for each screen element
 
-    std::vector<Point3D*> points_h;		// hypocycloid
-    std::vector<Point3D*> points_R;		// large circle
-    std::vector<Point3D*> points_r;		// small circle
+    std::vector<Point3D*> points_h;		// hypocycloid point list
+    std::vector<Point3D*> points_R;		// large circle point list
+    std::vector<Point3D*> points_r;		// small circle point list
     std::vector<Point3D*> points_l;		// line of small circle
 	
 	float theta = 0;		// theta of the current animation
