@@ -1,7 +1,11 @@
-all: main
+EXEFILE = myprogram
+LIBS = -lglfw -lGLU -lGL
+LIBDIRS += -L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib
+INCDIRS += -I/usr/include -I/usr/local/include -I/usr/include/GL
 
-main: main.cpp
-	g++ -g -o main main.cpp
 
-clean: main
-	rm -f main
+$(EXEFILE): main.cpp
+	g++ -o $(EXEFILE) $(LIBDIRS) $(INCDIRS) $(LIBS) main.cpp
+
+clean:
+	rm $(EXEFILE)
